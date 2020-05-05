@@ -83,7 +83,7 @@ class Leitor:
 
         self.bconnect = tk.Button(master, text='Importar XML', command=self.sql_connect)
         self.bconnect.grid(row=15,pady=10)
-
+    #Abre janela do windows para usuário escolher caminho da pasta
     def get_cam(self):
         global directory
         global path
@@ -93,7 +93,8 @@ class Leitor:
         arquivos = len(glob.glob1(path,'*.xml'))
         self.pathinsert.delete(0,tk.END)
         self.pathinsert.insert(0,path)
-
+    
+    #adiciona /sqlexpress no fim do servidor
     def set_express(self):
         if self.cb2.get() == 1:
             servidorexp = self.servinsert.get()
@@ -106,7 +107,8 @@ class Leitor:
             self.servinsert.delete(0,tk.END)
             self.servinsert.insert(0,servidornexp)
             self.servinsert.update()
-
+    
+    #Remove NFe canceladas encontradas durante a leitura do DF
     def remover_canc(self):
         global all_xml
         global canc_xml
@@ -119,7 +121,8 @@ class Leitor:
         if df_canc_xml.empty == False:
             df_all_xml =  pd.merge(df_all_xml,df_canc_xml, indicator=True,left_on='chNFe',right_on='canc_chNFe', how='left').query('_merge=="left_only"').drop(['_merge','canc_chNFe'], axis = 1)
             df_canc_xml.to_csv(os.path.join(path,'Cancelados.txt'),header = True,index = False,sep = '\t')
-
+    
+    #Pondera data média do vencimento de acordo com o valor e prazo de cada duplicata
     def ponderar_venc(self):
         global df_all_xml
         global venc_xml
@@ -140,7 +143,7 @@ class Leitor:
             df_all_xml = pd.merge(df_all_xml,df_venc_pond[['chNFe_venc','dVenc']], left_on='chNFe', right_on = 'chNFe_venc', how='left').drop('chNFe_venc', axis = 1)
 
 
-
+    #Connecta com o SQL Server utilizando o driver indicado na GUI
     def sql_connect(self):
         global engine
         global df_all_xml
@@ -177,6 +180,7 @@ class Leitor:
             #messagebox.showerror('Erro',e)
             raise
 
+    #Cria tabela no servidor SQL para insersão dos dados
     def criar_tabela(self):
         if self.cb1.get() == 1:
             with engine.connect() as con:
@@ -328,7 +332,8 @@ class Leitor:
                                     [infAdFisco] [varchar](5000) NULL
                                     )
                                 ''')
-
+    
+    #Lê os XML da pasta e tabula as informações em uma lista de dicionários
     def ler(self,diretorio,narquivos):
         global all_xml
         global canc_xml
@@ -604,10 +609,12 @@ class Leitor:
                     continue
             else:
                 continue
-
+    
+    #Define chunks para insersão dos dados no servidor SQL
     def chunker(self,seq, size):
         return (seq[pos:pos + size] for pos in range(0, len(seq), size))
-
+    
+    #Exporta os dados para o servidor SQL, na quantidade de linhas de definidas no chunker por vez
     def export(self):
         global df_all_xml
         chunksize = 1000
